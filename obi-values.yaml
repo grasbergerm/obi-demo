@@ -1,0 +1,41 @@
+# Helm values for the OpenTelemetry eBPF Instrumentation (OBI) chart.
+#
+#   helm upgrade --install obi open-telemetry/opentelemetry-ebpf-instrumentation \
+#     --namespace obi --create-namespace -f obi-values.yaml
+#
+# The chart deploys OBI as a privileged DaemonSet (it loads eBPF programs into
+# the node's kernel), with hostPID so it can see every process on the node.
+
+# Everything under config.data is OBI's own YAML configuration.
+config:
+  data:
+    # Only instrument workloads in the `demo` namespace. Without this section
+    # OBI instruments everything it can see on the node, including the
+    # observability stack itself.
+    discovery:
+      instrument:
+        - k8s_namespace: demo
+      # This is the "hybrid" switch, on by default (shown here for the demo's
+      # sake). OBI watches its own captured traffic for successful OTLP export
+      # calls; a service that exports its own traces gets OBI's traces
+      # suppressed, span metrics and service-graph metrics keep flowing.
+      exclude_otel_instrumented_services: true
+
+    # Decorate telemetry with k8s metadata (namespace, pod, deployment...).
+    # Service names then come from the Deployment name, no app config needed.
+    attributes:
+      kubernetes:
+        enable: true
+
+    # Where the telemetry goes: straight to the in-cluster OTLP endpoint.
+    otel_traces_export:
+      endpoint: http://lgtm.observability.svc.cluster.local:4317
+    otel_metrics_export:
+      endpoint: http://lgtm.observability.svc.cluster.local:4317
+      # OBI's default export interval is 60s; shorten it so the demo's
+      # dashboards fill within seconds of OBI starting.
+      interval: 10s
+      features:
+        - application            # RED metrics per service/route
+        - application_span       # span metrics derived from observed calls
+        - application_service_graph  # who-calls-whom edge metrics

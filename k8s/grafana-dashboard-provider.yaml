@@ -1,0 +1,10 @@
+# Grafana dashboard provisioning config, mounted into the otel-lgtm container
+# (see k8s/lgtm.yaml). Loads every dashboard JSON in the custom/ directory.
+apiVersion: 1
+
+providers:
+  - name: "OBI Demo"
+    type: file
+    options:
+      path: /otel-lgtm/grafana/conf/provisioning/dashboards/custom
+      foldersFromFilesStructure: false
