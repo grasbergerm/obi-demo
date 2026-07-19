@@ -94,14 +94,12 @@ trap 'echo; say "A step failed. Fix the issue and re-run ./scripts/demo.sh, comp
 
 say "== OBI demo: zero-code observability, then the hybrid handoff =="
 
-pause "create the cluster and observability stack"
+pause "create the cluster, observability stack, and demo app"
 ./01-cluster.sh
 ./02-observability.sh
+./03-app.sh
 port_forward observability lgtm 3000:3000 http://localhost:3000
 say "Log in (admin/admin) and keep it open, the demo dashboard is still empty."
-
-pause "deploy the demo app"
-./03-app.sh
 echo
 say "A request through the app:"
 kubectl --context kind-obi-demo -n demo exec deploy/loadgen -- curl -s http://frontend:8080/
