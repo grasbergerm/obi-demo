@@ -50,8 +50,8 @@ else
                     // "unknown"),
     "spans:    " + ([.batches[].scopeSpans[].spans[].name] | join(", ")),
     "business: " + ([.batches[].scopeSpans[].spans[] | select(.name == "calculate-quote")
-                     | .attributes[]? | select(.key == "quote.premium_cents")
-                     | "quote.premium_cents=" + (.value.intValue // .value.stringValue // (.value | tostring))]
+                     | .attributes[]? | select(.key == "quote.price_usd")
+                     | "quote.price_usd=" + (.value.doubleValue // .value.stringValue // (.value | tostring))]
                     | first // "(none, eBPF cannot see inside the app)")'
   echo
   echo "Phase 1: producer is 'opentelemetry-ebpf-instrumentation' (OBI). Phase 2:"

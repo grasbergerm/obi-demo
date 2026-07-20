@@ -19,7 +19,7 @@ func main() {
 			http.Error(w, "quote service overloaded", http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, `{"premium_cents":%d}`, 100+rand.Intn(9900))
+		fmt.Fprintf(w, `{"price_usd":%.2f}`, 1+rand.Float64()*99)
 	})
 
 	log.Println("backend listening on :8080")

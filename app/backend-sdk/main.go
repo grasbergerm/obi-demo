@@ -32,7 +32,7 @@ func main() {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
-	tracer := otel.Tracer("quote-engine")
+	tracer := otel.Tracer("quote-service")
 
 	quote := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This span is the payoff of SDK instrumentation: business logic,
@@ -42,15 +42,15 @@ func main() {
 
 		// Attribute the span before the failure branch, so even failing
 		// requests carry the business context you'd want when debugging them.
-		premium := 100 + rand.Intn(9900)
-		span.SetAttributes(attribute.Int("quote.premium_cents", premium))
+		price := 1 + rand.Float64()*99
+		span.SetAttributes(attribute.Float64("quote.price_usd", price))
 
 		time.Sleep(time.Duration(5+rand.Intn(115)) * time.Millisecond)
 		if rand.Intn(100) < 5 {
 			http.Error(w, "quote service overloaded", http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, `{"premium_cents":%d}`, premium)
+		fmt.Fprintf(w, `{"price_usd":%.2f}`, price)
 	})
 
 	// otelhttp gives us the server span and joins the incoming trace context.
