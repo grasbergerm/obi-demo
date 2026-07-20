@@ -19,7 +19,7 @@ done
 echo "=== Which services are sending traces to Tempo? ==="
 echo "    (empty = nothing is emitting traces; a name = that service is being observed)"
 SERVICES=$(curl -s 'http://localhost:13200/api/search/tag/service.name/values' \
-  | jq -r '.tagValues[]? | (.value // .)')
+  | jq -r '.tagValues[]? | if type == "object" then .value else . end')
 if [ -z "$SERVICES" ]; then
   echo "  → none: no service has produced a single trace yet"
 else
