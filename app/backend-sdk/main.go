@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"time"
@@ -42,7 +43,9 @@ func main() {
 
 		// Attribute the span before the failure branch, so even failing
 		// requests carry the business context you'd want when debugging them.
-		price := 1 + rand.Float64()*99
+		// Round to whole cents so the telemetry attribute and the JSON
+		// response report the same price (USD has 2 decimal places).
+		price := math.Round((1+rand.Float64()*99)*100) / 100
 		span.SetAttributes(attribute.Float64("quote.price_usd", price))
 
 		time.Sleep(time.Duration(5+rand.Intn(115)) * time.Millisecond)
