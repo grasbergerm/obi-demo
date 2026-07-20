@@ -107,7 +107,14 @@ port_forward demo frontend 8080:8080 http://localhost:8080
 say "Open it in a browser, every refresh is a live request."
 echo
 say "Can we shell into it? (backend is a scratch image: one static binary, nothing else)"
-kubectl --context kind-obi-demo -n demo exec deploy/backend -- sh 2>&1 || true
+echo "  \$ kubectl exec deploy/backend -- sh"
+shell_err=$(kubectl --context kind-obi-demo -n demo exec deploy/backend -- sh 2>&1 || true)
+# kubectl's real error is a deeply nested OCI wall; surface only the telling line.
+if printf '%s' "$shell_err" | grep -qiE 'not found|no such file|executable file'; then
+  echo "  → failed: there is no 'sh' inside the container to exec into"
+else
+  printf '%s\n' "$shell_err" | sed 's/^/  /'
+fi
 say "No shell, no agent, nowhere to even put instrumentation."
 echo
 say "And is it emitting any telemetry? Let's check:"

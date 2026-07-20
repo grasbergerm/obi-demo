@@ -16,18 +16,31 @@ for _ in $(seq 40); do
   sleep 0.5
 done
 
-echo "=== Services that have traces in Tempo ==="
-curl -s 'http://localhost:13200/api/search/tag/service.name/values' | jq .
+echo "=== Which services are sending traces to Tempo? ==="
+echo "    (empty = nothing is emitting traces; a name = that service is being observed)"
+SERVICES=$(curl -s 'http://localhost:13200/api/search/tag/service.name/values' \
+  | jq -r '.tagValues[]? | (.value // .)')
+if [ -z "$SERVICES" ]; then
+  echo "  → none: no service has produced a single trace yet"
+else
+  echo "$SERVICES" | sed 's/^/  → /'
+fi
 
 echo
-echo "=== RED metrics: request rate by service and status (Prometheus) ==="
-curl -s -G 'http://localhost:19090/api/v1/query' \
-  --data-urlencode 'query=sum by (service_name, http_response_status_code) (rate(http_server_request_duration_seconds_count[2m]))' | jq .
+echo "=== How many requests/sec is each service handling? (Prometheus RED metrics) ==="
+echo "    (one line per service+HTTP status; empty = no request metrics are being recorded)"
+RED=$(curl -s -G 'http://localhost:19090/api/v1/query' \
+  --data-urlencode 'query=sum by (service_name, http_response_status_code) (rate(http_server_request_duration_seconds_count[2m]))' \
+  | jq -r '.data.result[]? | "  → \(.metric.service_name)  HTTP \(.metric.http_response_status_code)  \((.value[1]|tonumber)*100|round/100) req/s"')
+echo "${RED:-  → none: no request-rate metrics exist yet}"
 
 echo
-echo "=== Service graph edges (Prometheus) ==="
-curl -s -G 'http://localhost:19090/api/v1/query' \
-  --data-urlencode 'query=sum by (client, server) (rate(traces_service_graph_request_total[2m]))' | jq .
+echo "=== Which services are calling which? (Prometheus service graph) ==="
+echo "    (each edge is caller → callee with its rate; empty = no call graph discovered)"
+EDGES=$(curl -s -G 'http://localhost:19090/api/v1/query' \
+  --data-urlencode 'query=sum by (client, server) (rate(traces_service_graph_request_total[2m]))' \
+  | jq -r '.data.result[]? | "  → \(.metric.client) calls \(.metric.server)  \((.value[1]|tonumber)*100|round/100) req/s"')
+echo "${EDGES:-  → none: no service-to-service edges discovered yet}"
 
 echo
 echo "=== Failing requests (Tempo, status=error) ==="
