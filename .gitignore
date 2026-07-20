@@ -1,0 +1,7 @@
+# Compiled Go binaries
+/app/backend/backend
+/app/backend-sdk/backend-sdk
+/app/frontend/frontend
+
+# macOS
+.DS_Store
